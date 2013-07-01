@@ -1,0 +1,30 @@
+//
+//  PHeadView.h
+//  chujian7day
+//
+//  Created by 王 瑞 on 13-4-20.
+//  Copyright (c) 2013年 chujian. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface PHeadView : UIView
+{
+    BOOL isValid;
+}
+
+//@property (nonatomic, strong) UIImageView *headView;
+//@property (nonatomic, strong) UILabel *name;
+//@property (nonatomic, strong) UILabel *sign;
+//@property (nonatomic, strong) UILabel *level;
+
+@property (nonatomic, strong) UIImage *headImage;
+@property (nonatomic, strong) NSString *nameString;
+@property (nonatomic, strong) NSString *signString;
+@property (nonatomic, strong) NSString *levelString;
+
+@property (nonatomic, strong) NSString *warningString;
+
+-(void)setHeadImage:(UIImage *)aHeadImage nameString:(NSString *)aName signString:(NSString *)aSign leveString:(NSString *)aLeve;
+-(void)setHeadImage:(UIImage *)headImage warningString:(NSString *)aWarningString;
+@end

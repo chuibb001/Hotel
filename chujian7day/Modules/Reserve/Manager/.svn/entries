@@ -1,0 +1,56 @@
+10
+
+dir
+0
+svn://svnserver/sdays/ios/chujian7day/Modules/Reserve/DataManager
+svn://svnserver/sdays
+add
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ed46080f-3044-434c-ba6b-40c5ff36bc92
+
+LBSManager.h
+file
+
+
+
+add
+
+LBSManager.m
+file
+
+
+
+add
+
+HotelListManager.h
+file
+
+
+
+add
+
+HotelListManager.m
+file
+
+
+
+add
+

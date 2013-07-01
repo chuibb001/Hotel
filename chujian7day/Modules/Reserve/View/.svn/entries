@@ -1,0 +1,61 @@
+10
+
+dir
+346
+svn://svnserver/sdays/ios/chujian7day/Modules/Reserve/View
+svn://svnserver/sdays
+
+
+
+2013-05-14T02:49:29.100910Z
+209
+yanyu
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ed46080f-3044-434c-ba6b-40c5ff36bc92
+
+CommodityCell
+dir
+
+HotelAnnotation
+dir
+
+HotelPicCell
+dir
+
+DropDownList
+dir
+
+DisplayTableView
+dir
+
+HotelImformationHeader
+dir
+
+CounterView
+dir
+
+ReserveResultCell
+dir
+
+HotelCell
+dir
+
+SelectorView
+dir
+
+HotelDetailCell
+dir
+

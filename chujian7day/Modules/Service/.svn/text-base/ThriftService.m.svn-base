@@ -1,0 +1,171 @@
+//
+//  ThriftService.m
+//  chujian7day
+//
+//  Created by yan kai on 13-4-23.
+//  Copyright (c) 2013年 chujian. All rights reserved.
+//
+
+#import "ThriftService.h"
+#import "TSocketClient.h"
+#import "TBinaryProtocol.h"
+#import "THTTPClient.h"
+#import "HotelDetail.h"
+#import "MemberDetail.h"
+#import "ReservationDetail.h"
+
+
+@implementation ThriftService
+
+static NSString* THRIFT_PLATFORM = @"thrift-platform";
+NSString* THRIFT_APP_VERSION = @"thrift-app-version";
+NSString* THRIFT_USER_NAME = @"thrift-user-name";
+NSString* THRIFT_USER_TOKEN = @"thrift-user-token";
+
++ (ThriftService*)shared
+{
+    static ThriftService* _instance;
+    if(_instance == nil) {
+        _instance = [[ThriftService alloc] init];
+    }
+    return _instance;
+}
+
+- (id)init
+{
+    self = [super init];
+    if(self) {
+#ifdef _debug_
+        host = @"121.199.12.17";
+        port = 7200;
+#else
+        host = @"";
+        port = 8009;
+#endif
+        
+        //client = [self getClient];
+    }
+    
+    return self;
+}
+
+- (ISevenDaysServiceClient*)getSocketClient
+{
+    TSocketClient* transport = [[TSocketClient alloc] initWithHostname:host port:port];
+    TBinaryProtocol *protocol = [[TBinaryProtocol alloc] initWithTransport:transport strictRead:YES strictWrite:YES];
+    return [[ISevenDaysServiceClient alloc] initWithProtocol:protocol];
+}
+
+- (ISevenDaysServiceClient*)getHttpClient
+{
+    NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://%@:%d/sevendays", host, port]];
+    THTTPClient *transport = [[THTTPClient alloc] initWithURL:url];
+    
+    // TODO:这里改成读配置吧
+    NSString* platform = [NSString stringWithFormat:@"ios:%@", [[UIDevice currentDevice] systemVersion]];
+    [transport setCustomHeader:THRIFT_PLATFORM value:platform];
+    [transport setCustomHeader:THRIFT_APP_VERSION value:@"0.1"];
+    [transport setCustomHeader:THRIFT_USER_NAME value:nil];
+    [transport setCustomHeader:THRIFT_USER_TOKEN value:nil];
+    
+    TBinaryProtocol *protocol = [[TBinaryProtocol alloc]
+                                 initWithTransport:transport
+                                 strictRead:YES
+                                 strictWrite:YES];
+    return [[ISevenDaysServiceClient alloc] initWithProtocol:protocol];
+}
+
+- (ISevenDaysServiceClient*)getClient
+{
+    return [self getHttpClient];
+}
+
+#pragma mark 查询酒店
+-(void)searchHotel:(SearchRequest*)request success:(void (^)(NSArray* hotelList))success failed:(void (^)(NSString* error))failed
+{
+    @try {
+        ISevenDaysServiceClient* client = [self getClient];
+        NSArray* hotelList =  [client search:request];
+        success(hotelList);
+    }
+    @catch (NSException* e) {
+        failed([NSString stringWithFormat:@"查询酒店失败:%@", e]);
+    }
+}
+
+- (void)getHotelDetail:(HotelRequest*)request success:(void (^)(HotelDetail*))success failed:(void (^)(NSString* error)) failed
+{
+    @try {
+        ISevenDaysServiceClient* client = [self getClient];
+        Hotel* hotel = [client getHotelDetails:request];
+        HotelDetail* hotelDetail = [[HotelDetail alloc] initWithHotel:hotel];
+        success(hotelDetail);
+    }
+    @catch (NSException* e) {
+        failed([NSString stringWithFormat:@"获取酒店详情失败:%@", e]);
+    }
+}
+
+
+#pragma  mark- Member
+-(void)useLogin:(Signture*)request success:(void (^)(MemberDetail *))success failed:(void (^)(NSString *error))failed{
+    @try{
+        ISevenDaysServiceClient *client = [self getClient];
+        Credential *memberLogin = [client login:request];
+        [[NSUserDefaults standardUserDefaults] setObject:memberLogin.token forKey:@"token"];
+        NSLog(@"%@",memberLogin.token);
+        
+//        NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:@"http://%@:%d/sevendays", host, port]];
+//        THTTPClient *transport = [[THTTPClient alloc] initWithURL:url];
+//        [transport setCustomHeader:THRIFT_USER_TOKEN value:memberLogin.token];
+        
+        MemberDetail *detail = [[MemberDetail alloc] initWithMember:memberLogin.member];
+        NSLog(@"%@",detail);
+        
+        
+        NSDictionary *dictOfUser = [[NSDictionary alloc] initWithObjectsAndKeys:detail.name,@"name",detail.memberid,@"memberID",detail.birthday,@"birthday",detail.idCard,@"idCard",detail.memberCard,@"memberCard",detail.phone,@"phone",detail.phoneVerified,@"phoneVerified",detail.email,@"email",detail.level,@"level",detail.isMale,@"isMale",detail.memberType,@"memberType",detail.isPayTrain,@"isPayTrain",nil];
+        
+        [[NSUserDefaults standardUserDefaults] setObject:dictOfUser forKey:@"userDetail"];
+       
+        success(detail);
+    }
+    @catch (NSException *e) {
+        failed([NSString stringWithFormat:@"用户登录失败:%@", e]);
+        [[NSUserDefaults standardUserDefaults] setObject:nil forKey:@"userDetail"];
+        [[NSUserDefaults standardUserDefaults] setObject:nil forKey:@"token"];
+    }
+}
+-(void)getOrders:(MemberInfoRequest *)request success:(void(^)(NSMutableArray *))success failed:(void(^)(NSString *error))failed{
+    @try{
+    ISevenDaysServiceClient *client = [self getClient];
+
+     NSMutableArray *Reservations = [client getMemberReservations:request];
+        NSMutableArray *temp = [[NSMutableArray alloc] init];
+        for (Reservation *aObject in Reservations) {
+            ReservationDetail *aDetail = [[ReservationDetail alloc] initWith:aObject];
+            [temp addObject:aDetail];
+        }
+        success(temp);
+    }
+    @catch (NSException *e) {
+        failed([NSString stringWithFormat:@"获取订单失败：%@",e]);
+        
+    }
+    
+}
+
+-(void)logoutandSuccess:(NSUInteger)i success:(void(^)(NSNumber *))success failed:(void(^)(NSString *error))failed
+{
+    @try {
+        ISevenDaysServiceClient *client = [self getClient];
+        BOOL isLogout = [client logout];
+      //  NSNumber *temp = [NSNumber numberWithBool:isLogout];
+        NSNumber *temp=[NSNumber numberWithBool:YES];
+        success(temp);
+    }
+    @catch (NSException *e) {
+        failed([NSString stringWithFormat:@"%@",e]);
+    }
+
+}
+@end
